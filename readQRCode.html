@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Read QR code</title>
+</head>
+
+<body>
+    <video id="qrReaderVideo"></video>
+    <canvas id="qrReaderImage"></canvas>
+</body>
+
+<script src="./jsQR.js"></script>
+<script>
+    function checkForQrCode(video) {
+        // start looking for QR codes only when video is started
+        if (video.readyState !== video.HAVE_ENOUGH_DATA) {
+            return;
+        }
+        
+        const qrReaderImage = document.getElementById('qrReaderImage');
+        const height = qrReaderImage.height = video.videoHeight;
+        const width = qrReaderImage.width = video.videoWidth;
+
+        // generate picture from video stream
+        qrReaderImage.getContext('2d').drawImage(video, 0, 0, width, height);
+        const { data } = qrReaderImage.getContext('2d').getImageData(0, 0, width, height);
+
+        // hand over picture to QR library
+        const code = jsQR(data, width, height);
+
+        // if a QR code is found, display content 
+        if (code && code.data.length > 1) {
+            alert(code.data);
+        }
+    }
+
+    async function readQrCode() {
+        const qrReaderVideo = document.getElementById('qrReaderVideo');
+
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'environment' },
+            audio: false,
+        });
+
+        qrReaderVideo.srcObject = stream;
+        qrReaderVideo.play();
+
+        // set interval to check video stream for QR codes
+        setInterval(() => checkForQrCode(qrReaderVideo), 250);
+    };
+
+    readQrCode();
+</script>
+</html>
